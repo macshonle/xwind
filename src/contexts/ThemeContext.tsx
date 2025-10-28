@@ -16,28 +16,34 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Load saved theme from localStorage
-    const savedThemeId = localStorage.getItem('theme-id');
-    if (savedThemeId) {
-      const theme = themes.find(t => t.id === savedThemeId);
-      if (theme) {
-        setCurrentTheme(theme);
+    if (typeof window !== 'undefined') {
+      const savedThemeId = localStorage.getItem('theme-id');
+      if (savedThemeId) {
+        const theme = themes.find(t => t.id === savedThemeId);
+        if (theme) {
+          setCurrentTheme(theme);
+        }
       }
     }
   }, []);
 
   useEffect(() => {
     // Apply theme CSS variables to document root
-    const root = document.documentElement;
-    Object.entries(currentTheme.cssVars).forEach(([key, value]) => {
-      root.style.setProperty(`--${key}`, value);
-    });
+    if (typeof window !== 'undefined' && document?.documentElement) {
+      const root = document.documentElement;
+      Object.entries(currentTheme.cssVars).forEach(([key, value]) => {
+        root.style.setProperty(`--${key}`, value);
+      });
+    }
   }, [currentTheme]);
 
   const setTheme = (themeId: string) => {
     const theme = themes.find(t => t.id === themeId);
     if (theme) {
       setCurrentTheme(theme);
-      localStorage.setItem('theme-id', themeId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('theme-id', themeId);
+      }
     }
   };
 
