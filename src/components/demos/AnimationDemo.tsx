@@ -35,9 +35,8 @@ export function AnimationDemo() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {animations.map((anim) => (
             <div
-              key={anim.name}
+              key={`${anim.name}-${trigger}`}
               className={`bg-background-secondary rounded-[var(--radius-lg)] p-8 border-2 border-border text-center ${anim.class}`}
-              style={{ animationIterationCount: trigger }}
             >
               <div className="text-4xl mb-3">✨</div>
               <h4 className="text-foreground font-[family-name:var(--font-display)] font-semibold">
