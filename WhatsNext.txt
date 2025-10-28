@@ -1,0 +1,25 @@
+We want to add the xrules engine. The engine checks a rule by pattern matching the HTML (called "forms") and then checking a constraint on that match. The pattern language to describe forms shall be strictly more expressive than CSS style selectors.
+
+Set of these rules can serve as living documentation. If the constraint is followed, the check passes. If the constraint is broken, a warning is displayed with as much information as possible.
+
+For inspiration, one kind of constraint is documented here: https://simonwillison.net/2025/Oct/17/form-labels/
+
+Full text:
+```
+Should form labels be wrapped or separate? (via) James Edwards notes that wrapping a form input in a label event like this has a significant downside:
+
+<label>Name <input type="text"></label>
+It turns out both Dragon Naturally Speaking for Windows and Voice Control for macOS and iOS fail to understand this relationship!
+
+You need to use the explicit <label for="element_id"> syntax to ensure those screen readers correctly understand the relationship between label and form field. You can still nest the input inside the label if you like:
+
+<label for="idField">Name
+  <input id="idField" type="text">
+</label>
+```
+
+Some rules apply to accessibility and SEO. Some rules will be framework specific. The top most rules will be app and house style specific (e.g., <img> elements with a certain context must include captions).
+
+New rules can be written to add an extra check to the development process. If the HTML is static, it can be checked directly. If the HTML is dynamically generated (e.g., using Next.js) then whether forms follow a rule will be dependent on a type-system checking regime: any code that can produce multiple possible forms will have the type of returning a union of those forms.
+
+Only forms that are referenced by some rule need to be checked. (For example, if a component can return an <img> or a <p>, and none of the active rules involve either of those elements, then the forms returned by the component are not relevant.) To serve as a traceability guide and to manage possible conflicting rules for a large project, the concept of scopes can be applied. A scope may be as simple anything with a parent with a specific CSS class applied. (Currently, such scopes should always be statically checkable and not changeable at run time. Thus, a metarule is that any CSS style deemed to be a scope cannot be conditional.)
