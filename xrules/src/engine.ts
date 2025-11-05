@@ -13,6 +13,7 @@ import type {
   XRulesConfig,
 } from './types';
 import { parseHTML, querySelectorAll } from './parser';
+import { queryExtended } from './extended-matcher';
 
 /**
  * Main XRules Engine class
@@ -92,7 +93,11 @@ export class XRulesEngine {
       }
 
       // Find all elements matching the rule's pattern
-      const elements = querySelectorAll(document.documentElement, rule.pattern);
+      // Use extended matcher if pattern contains extended syntax
+      const isExtendedPattern = /:(contains|has|without|has-parent|has-ancestor|has-sibling|not|count)/.test(rule.pattern);
+      const elements = isExtendedPattern
+        ? queryExtended(document.documentElement, rule.pattern)
+        : querySelectorAll(document.documentElement, rule.pattern);
 
       // Check each matching element
       for (const element of elements) {
@@ -178,9 +183,22 @@ export function createDefaultEngine(): XRulesEngine {
   const engine = new XRulesEngine();
 
   // Import and add default rules
-  // (will be expanded as we add more rules)
   const { formLabelsExplicit } = require('./rules/form-labels-explicit');
-  engine.addRule(formLabelsExplicit);
+  const { imagesAltText } = require('./rules/images-alt-text');
+  const { buttonsDescriptiveText } = require('./rules/buttons-descriptive-text');
+  const { externalLinksSecurityPartial } = require('./rules/external-links-security');
+  const { emptyLinks } = require('./rules/empty-links');
+  const { headingHierarchy, singleH1 } = require('./rules/heading-hierarchy');
+
+  engine.addRules([
+    formLabelsExplicit,
+    imagesAltText,
+    buttonsDescriptiveText,
+    externalLinksSecurityPartial,
+    emptyLinks,
+    headingHierarchy,
+    singleH1,
+  ]);
 
   return engine;
 }
