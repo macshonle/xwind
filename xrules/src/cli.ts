@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * XRules CLI - Command-line interface for running xrules (Phase 6 Enhanced)
+ * XRules CLI - Command-line interface for running xrules (Phase 7 Enhanced)
  */
 
 import * as fs from 'fs';
@@ -13,7 +13,10 @@ import { formatResults, formatResultsJSON, countIssues } from './reporter';
 import { loadConfig, getResolvedConfig } from './config-loader';
 import { getReporter } from './reporters';
 import { watch } from './watcher';
+import { createFixAwareEngine } from './fix-engine';
+import { applyFixes } from './fixer';
 import type { CheckResult } from './types';
+import type { FileFixResult, BatchFixResult } from './fix-types';
 
 const program = new Command();
 
@@ -147,6 +150,116 @@ program
         await watcher.stop();
         process.exit(0);
       });
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// Fix command (Phase 7)
+program
+  .command('fix')
+  .description('Automatically fix violations where possible')
+  .argument('[files...]', 'Files or glob patterns to fix')
+  .option('-c, --config <path>', 'Path to configuration file')
+  .option('--dry-run', 'Preview fixes without applying them')
+  .option('--safe-only', 'Only apply safe fixes')
+  .option('--max-fixes <number>', 'Maximum number of fixes to apply', parseInt)
+  .action(async (files: string[], options) => {
+    try {
+      // Load configuration
+      const configPath = options.config || process.cwd();
+      const config = await getResolvedConfig(configPath);
+
+      // If no files specified, use config or defaults
+      if (files.length === 0) {
+        files = config.files || ['**/*.html'];
+      }
+
+      // Expand glob patterns
+      const expandedFiles: string[] = [];
+      const ignorePatterns = config.ignore || ['node_modules/**', 'dist/**', 'build/**', '.next/**'];
+
+      for (const pattern of files) {
+        const matches = await glob(pattern, {
+          ignore: ignorePatterns,
+        });
+        expandedFiles.push(...matches);
+      }
+
+      if (expandedFiles.length === 0) {
+        console.error('No files found');
+        process.exit(1);
+      }
+
+      console.log(`🔧 Fixing ${expandedFiles.length} file(s)...`);
+      if (options.dryRun) {
+        console.log('(Dry run - no files will be modified)\n');
+      }
+
+      // Create fix-aware engine
+      const engine = createFixAwareEngine();
+
+      // Process each file
+      const fileResults: FileFixResult[] = [];
+      let totalFixes = 0;
+      let filesModified = 0;
+
+      for (const filePath of expandedFiles) {
+        const absolutePath = path.resolve(filePath);
+        const html = fs.readFileSync(absolutePath, 'utf-8');
+
+        // Check and get fixable violations
+        const checkResult = engine.checkHTMLWithFixes(html, filePath);
+
+        if (checkResult.fixableCount === 0) {
+          console.log(`  ${filePath}: No fixable violations`);
+          continue;
+        }
+
+        // Apply fixes
+        const fixResult = applyFixes(html, checkResult.violations, {
+          safeOnly: options.safeOnly,
+          dryRun: options.dryRun,
+          maxFixes: options.maxFixes,
+        });
+
+        fileResults.push({
+          filePath,
+          result: fixResult,
+          modified: fixResult.hasChanges,
+        });
+
+        totalFixes += fixResult.fixCount;
+
+        // Write fixed content if not dry run
+        if (!options.dryRun && fixResult.hasChanges) {
+          fs.writeFileSync(absolutePath, fixResult.fixed, 'utf-8');
+          filesModified++;
+        }
+
+        // Report results
+        if (fixResult.fixCount > 0) {
+          console.log(`  ✅ ${filePath}: Fixed ${fixResult.fixCount} violation(s)`);
+          if (fixResult.skippedFixes.length > 0) {
+            console.log(`     ⚠️  Skipped ${fixResult.skippedFixes.length} unsafe fix(es)`);
+          }
+        } else {
+          console.log(`  ℹ️  ${filePath}: ${checkResult.fixableCount} fixable, but skipped (unsafe or filtered)`);
+        }
+      }
+
+      // Summary
+      console.log('\n' + '='.repeat(60));
+      console.log('Fix Summary:');
+      console.log(`  Total fixes applied: ${totalFixes}`);
+      console.log(`  Files modified: ${filesModified}`);
+
+      if (options.dryRun) {
+        console.log('\nDry run completed. Run without --dry-run to apply fixes.');
+      }
+
+      process.exit(0);
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : String(error));
       process.exit(1);
