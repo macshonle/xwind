@@ -12,20 +12,19 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]);
-
-  useEffect(() => {
-    // Load saved theme from localStorage
+  const [currentTheme, setCurrentTheme] = useState<Theme>(() => {
+    // Initialize theme from localStorage
     if (typeof window !== 'undefined') {
       const savedThemeId = localStorage.getItem('theme-id');
       if (savedThemeId) {
         const theme = themes.find(t => t.id === savedThemeId);
         if (theme) {
-          setCurrentTheme(theme);
+          return theme;
         }
       }
     }
-  }, []);
+    return themes[0];
+  });
 
   useEffect(() => {
     // Apply theme CSS variables to document root
