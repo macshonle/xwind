@@ -24,6 +24,10 @@ export * from './extended-matcher';
 // Export presets
 export * from './presets';
 
+// Phase 4: Type System Integration (TypeScript/JSX support)
+export * from './jsx-parser';
+export * from './jsx-engine';
+
 // Re-export for convenience
 export { XRulesEngine, createDefaultEngine } from './engine';
 export { parseHTML } from './parser';
