@@ -177,12 +177,12 @@ function getElementContext(element: Element, maxLength: number = 100): string {
 }
 
 /**
- * Create a default engine with standard rules
+ * Create a default engine with recommended rules
  */
 export function createDefaultEngine(): XRulesEngine {
   const engine = new XRulesEngine();
 
-  // Import and add default rules
+  // Phase 1 & 2 rules
   const { formLabelsExplicit } = require('./rules/form-labels-explicit');
   const { imagesAltText } = require('./rules/images-alt-text');
   const { buttonsDescriptiveText } = require('./rules/buttons-descriptive-text');
@@ -190,14 +190,64 @@ export function createDefaultEngine(): XRulesEngine {
   const { emptyLinks } = require('./rules/empty-links');
   const { headingHierarchy, singleH1 } = require('./rules/heading-hierarchy');
 
+  // Phase 3 - Accessibility rules
+  const {
+    linkDescriptiveText,
+    formInputAutocomplete,
+    formFieldsetLegend,
+    landmarkRegions,
+    ariaValidAttributes,
+    ariaHiddenFocusable,
+    tableHeaders,
+  } = require('./rules/accessibility');
+
+  // Phase 3 - SEO rules
+  const {
+    metaTitle,
+    metaDescription,
+    metaViewport,
+    metaCharset,
+    htmlLang,
+  } = require('./rules/seo');
+
+  // Phase 3 - Security rules
+  const {
+    inlineEventHandlers,
+    dangerousLinks,
+  } = require('./rules/security');
+
+  // Recommended rule set (balanced for most projects)
   engine.addRules([
+    // Critical accessibility (errors)
     formLabelsExplicit,
     imagesAltText,
-    buttonsDescriptiveText,
-    externalLinksSecurityPartial,
     emptyLinks,
+    ariaValidAttributes,
+    tableHeaders,
+    formFieldsetLegend,
+
+    // Important warnings
     headingHierarchy,
     singleH1,
+    buttonsDescriptiveText,
+    linkDescriptiveText,
+    externalLinksSecurityPartial,
+
+    // SEO essentials
+    metaTitle,
+    metaDescription,
+    metaViewport,
+    metaCharset,
+    htmlLang,
+
+    // Security
+    dangerousLinks,
+    inlineEventHandlers,
+
+    // Best practices (info level)
+    landmarkRegions,
+    formInputAutocomplete,
+    ariaHiddenFocusable,
   ]);
 
   return engine;
