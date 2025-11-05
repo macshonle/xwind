@@ -28,7 +28,14 @@ export * from './presets';
 export * from './jsx-parser';
 export * from './jsx-engine';
 
+// Phase 5: Scopes & Traceability
+export * from './scope-types';
+export * from './scope-registry';
+export * from './scope-engine';
+
 // Re-export for convenience
 export { XRulesEngine, createDefaultEngine } from './engine';
 export { parseHTML } from './parser';
 export { formatResults, formatResultsJSON } from './reporter';
+export { globalScopeRegistry, createScope } from './scope-registry';
+export { createScopeAwareEngine } from './scope-engine';
