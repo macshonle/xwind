@@ -111,6 +111,102 @@ export default function Home() {
         <ComponentsDemo />
       </DemoSection>
 
+      {/* Realistic Demos Section */}
+      <section className="bg-background py-20 px-6 theme-transition">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Realistic Web Demos
+            </h2>
+            <p className="text-foreground-muted text-xl max-w-3xl mx-auto">
+              Explore three comprehensive examples showcasing Tailwind CSS in real-world applications.
+              These demos serve as test cases for accessibility, SEO, and best practices.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <a
+              href="/demos/ecommerce"
+              className="group bg-background-secondary border-2 border-border rounded-[var(--radius-lg)]
+                       overflow-hidden hover:shadow-[var(--shadow-lg)] hover:border-accent
+                       theme-transition focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              <div className="bg-primary/10 h-48 flex items-center justify-center text-6xl">
+                🛒
+              </div>
+              <div className="p-6">
+                <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold text-foreground mb-2
+                             group-hover:text-accent theme-transition">
+                  E-commerce Catalog
+                </h3>
+                <p className="text-foreground-muted mb-4">
+                  Product grid with filters, search, shopping cart, and responsive design.
+                  Demonstrates complex layouts and form interactions.
+                </p>
+                <span className="text-accent font-semibold group-hover:underline">
+                  View Demo →
+                </span>
+              </div>
+            </a>
+
+            <a
+              href="/demos/dashboard"
+              className="group bg-background-secondary border-2 border-border rounded-[var(--radius-lg)]
+                       overflow-hidden hover:shadow-[var(--shadow-lg)] hover:border-accent
+                       theme-transition focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              <div className="bg-accent/10 h-48 flex items-center justify-center text-6xl">
+                📊
+              </div>
+              <div className="p-6">
+                <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold text-foreground mb-2
+                             group-hover:text-accent theme-transition">
+                  SaaS Dashboard
+                </h3>
+                <p className="text-foreground-muted mb-4">
+                  Analytics dashboard with data tables, charts, sidebar navigation, and user management.
+                  Showcases data visualization patterns.
+                </p>
+                <span className="text-accent font-semibold group-hover:underline">
+                  View Demo →
+                </span>
+              </div>
+            </a>
+
+            <a
+              href="/demos/landing"
+              className="group bg-background-secondary border-2 border-border rounded-[var(--radius-lg)]
+                       overflow-hidden hover:shadow-[var(--shadow-lg)] hover:border-accent
+                       theme-transition focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              <div className="bg-secondary/10 h-48 flex items-center justify-center text-6xl">
+                🚀
+              </div>
+              <div className="p-6">
+                <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold text-foreground mb-2
+                             group-hover:text-accent theme-transition">
+                  Marketing Landing Page
+                </h3>
+                <p className="text-foreground-muted mb-4">
+                  Hero sections, features, pricing tables, testimonials, and newsletter signup.
+                  Perfect example of marketing site patterns.
+                </p>
+                <span className="text-accent font-semibold group-hover:underline">
+                  View Demo →
+                </span>
+              </div>
+            </a>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-foreground-muted">
+              These demos include intentional examples of both good and improvable patterns for testing
+              the xrules engine with real-world scenarios.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-foreground text-background py-12 px-6 theme-transition">
         <div className="max-w-7xl mx-auto text-center">
