@@ -30,7 +30,7 @@ export function SpacingDemo() {
           Each theme defines a custom space-unit, and all spacing is calculated as multiples of that base unit.
         </p>
         <div className="bg-background-secondary rounded-[var(--radius-lg)] p-8 border-2 border-border">
-          {spacingValues.map((spacing, index) => (
+          {spacingValues.map((spacing) => (
             <div key={spacing.name} className="mb-6 last:mb-0">
               <div className="flex items-center gap-4 mb-2">
                 <code className="font-[family-name:var(--font-mono)] text-accent text-sm">

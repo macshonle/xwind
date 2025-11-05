@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bad Example - Implicit Labels</title>
+</head>
+<body>
+  <form>
+    <!-- BAD: Implicit label association without 'for' attribute -->
+    <label>Username <input type="text" /></label>
+
+    <!-- BAD: Nested input without explicit 'for'/'id' -->
+    <label>
+      Email Address
+      <input type="email" />
+    </label>
+
+    <!-- BAD: No label at all -->
+    <input type="password" placeholder="Password" />
+
+    <button type="submit">Submit</button>
+  </form>
+</body>
+</html>
