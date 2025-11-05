@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * XRules CLI - Command-line interface for running xrules
+ * XRules CLI - Command-line interface for running xrules (Phase 6 Enhanced)
  */
 
 import * as fs from 'fs';
@@ -10,6 +10,9 @@ import { glob } from 'glob';
 import { Command } from 'commander';
 import { createDefaultEngine } from './engine';
 import { formatResults, formatResultsJSON, countIssues } from './reporter';
+import { loadConfig, getResolvedConfig } from './config-loader';
+import { getReporter } from './reporters';
+import { watch } from './watcher';
 import type { CheckResult } from './types';
 
 const program = new Command();
@@ -19,23 +22,31 @@ program
   .description('Check HTML files against accessibility and best practice rules')
   .version('0.1.0')
   .argument('[files...]', 'Files or glob patterns to check')
-  .option('-f, --format <format>', 'Output format (text or json)', 'text')
+  .option('-c, --config <path>', 'Path to configuration file')
+  .option('-f, --format <format>', 'Output format (stylish, compact, json, junit, github, table)', 'stylish')
   .option('--no-color', 'Disable colored output')
   .option('-q, --quiet', 'Only show errors, suppress warnings')
   .option('--verbose', 'Show verbose output including context')
   .option('--no-suggestions', 'Hide fix suggestions')
+  .option('--max-warnings <number>', 'Fail if more than N warnings', parseInt)
   .action(async (files: string[], options) => {
     try {
-      // If no files specified, check current directory
+      // Load configuration
+      const configPath = options.config || process.cwd();
+      const config = await getResolvedConfig(configPath);
+
+      // If no files specified, use config or defaults
       if (files.length === 0) {
-        files = ['**/*.html'];
+        files = config.files || ['**/*.html'];
       }
 
       // Expand glob patterns
       const expandedFiles: string[] = [];
+      const ignorePatterns = config.ignore || ['node_modules/**', 'dist/**', 'build/**', '.next/**'];
+
       for (const pattern of files) {
         const matches = await glob(pattern, {
-          ignore: ['node_modules/**', 'dist/**', 'build/**', '.next/**'],
+          ignore: ignorePatterns,
         });
         expandedFiles.push(...matches);
       }
@@ -58,24 +69,34 @@ program
         results.push(result);
       }
 
-      // Format and output results
-      if (options.format === 'json') {
+      // Format and output results using Phase 6 reporters
+      const format = config.format || options.format;
+
+      if (format === 'json') {
         console.log(formatResultsJSON(results));
       } else {
-        const output = formatResults(results, {
+        const reporter = getReporter(format);
+        const output = reporter(results, {
           colors: options.color,
           verbose: options.verbose,
           showSuggestions: options.suggestions,
+          cwd: process.cwd(),
         });
         console.log(output);
       }
 
       // Exit with appropriate code
       const counts = countIssues(results);
-      if (counts.errors > 0) {
+
+      // Check max warnings
+      const maxWarnings = options.maxWarnings ?? config.maxWarnings;
+      if (maxWarnings !== undefined && counts.warnings > maxWarnings) {
+        console.error(`\n✖ Too many warnings (${counts.warnings} > ${maxWarnings})`);
         process.exit(1);
-      } else if (!options.quiet && counts.warnings > 0) {
-        process.exit(0);
+      }
+
+      if (counts.errors > 0 || (config.failOnWarnings && counts.warnings > 0)) {
+        process.exit(1);
       } else {
         process.exit(0);
       }
@@ -85,12 +106,113 @@ program
     }
   });
 
+// Watch command (Phase 6)
+program
+  .command('watch')
+  .description('Watch files for changes and automatically re-check')
+  .argument('[files...]', 'Files or glob patterns to watch')
+  .option('-c, --config <path>', 'Path to configuration file')
+  .option('-f, --format <format>', 'Output format (stylish, compact, json)', 'stylish')
+  .option('--verbose', 'Show verbose output')
+  .action(async (files: string[], options) => {
+    try {
+      // Load configuration
+      const configPath = options.config || process.cwd();
+      const config = await getResolvedConfig(configPath);
+
+      // Use provided files or config files
+      if (files.length > 0) {
+        config.files = files;
+      } else if (!config.files) {
+        config.files = ['**/*.html', '**/*.tsx', '**/*.jsx'];
+      }
+
+      console.log('Starting XRules in watch mode...');
+      console.log('Watching patterns:', config.files);
+      console.log('Press Ctrl+C to stop\n');
+
+      // Start watching
+      const watcher = await watch({
+        config,
+        format: options.format,
+        verbose: options.verbose,
+        reporterOptions: {
+          colors: true,
+        },
+      });
+
+      // Handle graceful shutdown
+      process.on('SIGINT', async () => {
+        console.log('\n\nStopping watcher...');
+        await watcher.stop();
+        process.exit(0);
+      });
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// Init command (Phase 6)
+program
+  .command('init')
+  .description('Create a configuration file')
+  .option('-t, --type <type>', 'Config file type (json or js)', 'json')
+  .action((options) => {
+    const filename = options.type === 'js' ? 'xrules.config.js' : '.xrulesrc.json';
+    const configPath = path.join(process.cwd(), filename);
+
+    if (fs.existsSync(configPath)) {
+      console.error(`Configuration file already exists: ${filename}`);
+      process.exit(1);
+    }
+
+    const defaultConfig = {
+      rules: {
+        'images-alt-text': {
+          severity: 'error',
+        },
+        'form-labels-explicit': {
+          severity: 'error',
+        },
+        'buttons-descriptive-text': {
+          severity: 'warning',
+        },
+        'external-links-security': {
+          severity: 'warning',
+        },
+        'empty-links': {
+          severity: 'error',
+        },
+        'heading-hierarchy': {
+          severity: 'warning',
+        },
+      },
+      files: ['**/*.html', '**/*.tsx', '**/*.jsx'],
+      ignore: ['node_modules/**', 'dist/**', 'build/**'],
+      format: 'stylish',
+    };
+
+    if (options.type === 'js') {
+      const content = `module.exports = ${JSON.stringify(defaultConfig, null, 2)};\n`;
+      fs.writeFileSync(configPath, content, 'utf-8');
+    } else {
+      fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2) + '\n', 'utf-8');
+    }
+
+    console.log(`✨ Created ${filename}`);
+    console.log('\nYou can now run:');
+    console.log('  xrules                  # Check files');
+    console.log('  xrules watch            # Watch for changes');
+    console.log('  xrules list-rules       # List available rules');
+  });
+
 // Check command (for checking Next.js build output)
 program
   .command('check-build')
   .description('Check Next.js build output (HTML files)')
   .argument('[buildDir]', 'Build directory to check', '.next')
-  .option('-f, --format <format>', 'Output format (text or json)', 'text')
+  .option('-f, --format <format>', 'Output format', 'stylish')
   .action(async (buildDir: string, options) => {
     const patterns = [
       path.join(buildDir, '**/*.html'),
@@ -120,12 +242,9 @@ program
       results.push(result);
     }
 
-    if (options.format === 'json') {
-      console.log(formatResultsJSON(results));
-    } else {
-      const output = formatResults(results, { colors: true });
-      console.log(output);
-    }
+    const reporter = getReporter(options.format);
+    const output = reporter(results, { colors: true, cwd: process.cwd() });
+    console.log(output);
 
     const counts = countIssues(results);
     process.exit(counts.errors > 0 ? 1 : 0);

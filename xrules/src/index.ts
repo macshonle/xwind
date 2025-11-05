@@ -33,9 +33,17 @@ export * from './scope-types';
 export * from './scope-registry';
 export * from './scope-engine';
 
+// Phase 6: Integration & Tooling
+export * from './config-loader';
+export * from './reporters';
+export * from './watcher';
+export { xrulesPlugin, xrules as vitePlugin } from './integrations/vite-plugin';
+
 // Re-export for convenience
 export { XRulesEngine, createDefaultEngine } from './engine';
 export { parseHTML } from './parser';
 export { formatResults, formatResultsJSON } from './reporter';
 export { globalScopeRegistry, createScope } from './scope-registry';
 export { createScopeAwareEngine } from './scope-engine';
+export { loadConfig, getResolvedConfig } from './config-loader';
+export { watch } from './watcher';
